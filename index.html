@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silverbullet Data Miner v2.2</title>
+    <style>
+        :root {
+            --bg-color: #030508;
+            --panel-color: #0b101a;
+            --text-color: #e5e7eb;
+            --accent-color: #00ff66;
+            --accent-dim: rgba(0, 255, 102, 0.15);
+            --danger-color: #ff3366;
+            --border-color: #1f2937;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
+
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; }
+
+        /* AUTH GATE */
+        #authScreen { text-align: center; border: 1px solid var(--border-color); padding: 40px; border-radius: 8px; background: var(--panel-color); }
+        #authScreen h1 { color: var(--accent-color); margin-bottom: 20px; }
+        #authScreen input { padding: 10px; background: #000; border: 1px solid var(--accent-color); color: var(--accent-color); margin-bottom: 10px; width: 220px; text-align: center; }
+        #authScreen button { background: var(--accent-color); color: black; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+
+        /* MAIN APP */
+        #mainApp { display: none; width: 100%; max-width: 1000px; background-color: var(--panel-color); border: 1px solid rgba(0, 255, 102, 0.2); padding: 25px; border-radius: 8px; }
+
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
+        .header h1 { color: var(--accent-color); font-size: 1.8rem; text-transform: uppercase; }
+        
+        .filter-controls { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; justify-content: center; background-color: #05070a; padding: 15px; border: 1px solid var(--border-color); }
+        .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        textarea { width: 100%; height: 350px; background-color: #020305; border: 1px solid var(--border-color); color: #8b949e; padding: 15px; }
+        
+        .action-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        button { padding: 12px; cursor: pointer; border: 1px solid var(--border-color); background: #05070a; color: white; }
+        .btn-primary { border-color: var(--accent-color); color: var(--accent-color); }
+        
+        @media (max-width: 768px) { .workspace { grid-template-columns: 1fr; } .action-buttons { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+<div id="authScreen">
+    <h1>SILVERBULLET GATE</h1>
+    <input type="password" id="keyInput" placeholder="ENTER ACCESS KEY">
+    <br>
+    <button onclick="checkAuth()">AUTHENTICATE</button>
+</div>
+
+<div id="mainApp">
+    <div class="header"><h1>Silverbullet Data Miner <span>v2.2</span></h1></div>
+    
+    <div class="filter-controls">
+        <label><input type="checkbox" id="extEmails" checked> Emails</label>
+        <label><input type="checkbox" id="extUrls"> URLs</label>
+        <label><input type="checkbox" id="extIps"> IPv4</label>
+        <input type="text" id="customRegex" placeholder="Custom Regex..." style="background:#000; color:#fff; border:1px solid #333; padding:5px;">
+    </div>
+
+    <div class="workspace">
+        <textarea id="inputData" placeholder="[ Paste text or Drop .txt files here... ]"></textarea>
+        <textarea id="outputData" readonly></textarea>
+    </div>
+
+    <div class="action-buttons">
+        <button onclick="clearAll()">CLEAR</button>
+        <button class="btn-primary" onclick="runExtraction()">EXTRACT</button>
+        <button id="copyBtn" onclick="copyToClipboard()" disabled>COPY</button>
+        <button id="downloadBtn" onclick="downloadTXT()" disabled>EXPORT</button>
+    </div>
+</div>
+
+<script>
+    function checkAuth() {
+        if (document.getElementById('keyInput').value === "SVB001") {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+        } else { alert("ACCESS DENIED"); }
+    }
+
+    // Drag and Drop
+    const inputArea = document.getElementById('inputData');
+    inputArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => inputArea.value = e.target.result;
+        reader.readAsText(file);
+    });
+    inputArea.addEventListener('dragover', (e) => e.preventDefault());
+
+    function runExtraction() {
+        const text = inputArea.value;
+        const output = document.getElementById('outputData');
+        let finalOutput = "";
+
+        // Simple Regex logic for demonstration
+        if(document.getElementById('extEmails').checked) finalOutput += "--- EMAILS ---\n" + (text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || []).join('\n') + "\n\n";
+        if(document.getElementById('extUrls').checked) finalOutput += "--- URLS ---\n" + (text.match(/https?:\/\/[^\s]+/g) || []).join('\n') + "\n\n";
+        
+        output.value = finalOutput || "No matches found.";
+        document.getElementById('copyBtn').disabled = false;
+        document.getElementById('downloadBtn').disabled = false;
+    }
+
+    function clearAll() { inputArea.value = ""; document.getElementById('outputData').value = ""; }
+    function downloadTXT() { 
+        const blob = new Blob([document.getElementById('outputData').value], {type: 'text/plain'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "data.txt"; a.click(); 
+    }
+</script>
+
+</body>
+</html>
