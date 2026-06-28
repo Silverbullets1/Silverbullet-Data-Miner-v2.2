@@ -7,7 +7,7 @@
     <style>
         :root { --bg-color: #030508; --panel-color: #0b101a; --text-color: #e5e7eb; --accent-color: #00ff66; --border-color: #1f2937; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: var(--bg-color); color: #e5e7eb; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 10px; }
+        body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 10px; }
         
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(0, 255, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 255, 102, 0); } }
         .pulse-btn { animation: pulse 2s infinite; }
@@ -22,7 +22,22 @@
         .patch-notes { font-size: 0.7rem; color: #6b7280; margin-bottom: 15px; border-bottom: 1px solid #1f2937; padding-bottom: 5px; }
 
         .control-panel { background: #05070a; padding: 20px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 20px; }
-        .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        
+        /* Updated Grid Filters for proper alignment */
+        .grid-filters { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 15px; 
+        }
+        .grid-filters label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
         
         .presets { display: flex; gap: 10px; margin-bottom: 15px; }
         .preset-btn { background: #1f2937; font-size: 0.75rem; padding: 5px 10px; border: none; cursor: pointer; color: white; border-radius: 4px; }
@@ -138,7 +153,7 @@
             extUrls: { label: "URLS", regex: /https?:\/\/[^\s]+/g },
             extUHQ: { label: "DUMP COMBO", regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[^\s]+/g },
             extULP: { label: "DUMP ULP", regex: /[a-zA-Z0-9._%+-]+:[^\s]+/g },
-            extLogs: { label: "MIXED LOGS", regex: /[a-zA-Z0-9]{10,}=[^\s]+/g } // Pattern for key=value logs
+            extLogs: { label: "MIXED LOGS", regex: /[a-zA-Z0-9]{10,}=[^\s]+/g }
         };
         for (let id in patterns) {
             if (document.getElementById(id).checked) {
