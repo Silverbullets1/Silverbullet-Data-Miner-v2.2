@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silverbullet Data Miner v2.3</title>
+    <title>Silverbullet Data Miner v2.5</title>
     <style>
         :root {
             --bg-color: #030508;
@@ -16,22 +16,22 @@
         body { background-color: var(--bg-color); color: var(--text-color); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 15px; }
 
         /* AUTH GATE */
-        #authScreen { text-align: center; border: 1px solid var(--border-color); padding: 40px; border-radius: 8px; background: var(--panel-color); }
-        #authScreen input { padding: 10px; background: #000; border: 1px solid var(--accent-color); color: var(--accent-color); margin-bottom: 10px; width: 220px; text-align: center; }
-        #authScreen button { background: var(--accent-color); color: black; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+        #authScreen { text-align: center; border: 1px solid var(--border-color); padding: 40px; border-radius: 8px; background: var(--panel-color); width: 100%; max-width: 400px; }
+        #authScreen input { padding: 12px; background: #000; border: 1px solid var(--accent-color); color: var(--accent-color); margin-bottom: 15px; width: 100%; text-align: center; }
+        #authScreen button { background: var(--accent-color); color: black; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; width: 100%; }
 
         /* MAIN APP */
         #mainApp { display: none; width: 100%; max-width: 1000px; background-color: var(--panel-color); border: 1px solid rgba(0, 255, 102, 0.2); padding: 25px; border-radius: 8px; }
         
         .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed var(--border-color); padding-bottom: 15px; }
-        .header h1 { color: var(--accent-color); font-size: 1.5rem; }
-        .filter-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; background: #05070a; padding: 15px; border: 1px solid var(--border-color); }
+        .filter-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; background: #05070a; padding: 15px; border: 1px solid var(--border-color); }
         .workspace { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        textarea { width: 100%; height: 300px; background-color: #020305; border: 1px solid var(--border-color); color: #8b949e; padding: 15px; }
+        textarea { width: 100%; height: 300px; background-color: #020305; border: 1px solid var(--border-color); color: #8b949e; padding: 15px; outline: none; }
         
-        button { padding: 12px; cursor: pointer; border: 1px solid var(--border-color); background: #05070a; color: white; width: 100%; }
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        button { padding: 12px; cursor: pointer; border: 1px solid var(--border-color); background: #05070a; color: white; font-weight: bold; }
         .btn-primary { border-color: var(--accent-color); color: var(--accent-color); }
-        @media (max-width: 768px) { .workspace { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .workspace { grid-template-columns: 1fr; } .btn-grid { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
@@ -39,16 +39,16 @@
 <div id="authScreen">
     <h1>SILVERBULLET GATE</h1>
     <input type="password" id="keyInput" placeholder="ENTER ACCESS KEY">
-    <br>
     <button onclick="checkAuth()">AUTHENTICATE</button>
 </div>
 
 <div id="mainApp">
-    <div class="header"><h1>Silverbullet Data Miner <span>v2.3</span></h1></div>
+    <div class="header"><h1>Silverbullet Data Miner <span>v2.5</span></h1></div>
     
     <div class="filter-controls">
         <label><input type="checkbox" id="extEmails" checked> Emails</label>
         <label><input type="checkbox" id="extCombos"> Email:Pass</label>
+        <label><input type="checkbox" id="extUserPass"> User:Pass</label>
         <label><input type="checkbox" id="extUrls"> URLs</label>
         <label><input type="checkbox" id="extIps"> IPv4</label>
     </div>
@@ -58,7 +58,7 @@
         <textarea id="outputData" readonly placeholder="[ Results output ]"></textarea>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+    <div class="btn-grid">
         <button onclick="clearAll()">CLEAR</button>
         <button class="btn-primary" onclick="runExtraction()">EXTRACT</button>
         <button onclick="copyToClipboard()">COPY</button>
@@ -67,14 +67,43 @@
 </div>
 
 <script>
-    function checkAuth() {
-        if (document.getElementById('keyInput').value === "SVB001") {
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
+    // SHA-256 Hash for "SVB001"
+    const SECRET_HASH = "815617a662e0881c62f3a61f2f01f0c43336d41b6357cf8959f6d65451e04130";
+
+    window.onload = () => {
+        if (localStorage.getItem('sb_auth') === 'true') {
+            unlockApp();
+        }
+    };
+
+    async function checkAuth() {
+        const inputKey = document.getElementById('keyInput').value;
+        const msgBuffer = new TextEncoder().encode(inputKey);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        if (hashHex === SECRET_HASH) {
+            localStorage.setItem('sb_auth', 'true');
+            unlockApp();
         } else { alert("ACCESS DENIED"); }
     }
 
-    // Extraction Logic
+    function unlockApp() {
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+    }
+
+    // Drag and Drop
+    const inputArea = document.getElementById('inputData');
+    inputArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => inputArea.value = e.target.result;
+        reader.readAsText(file);
+    });
+    inputArea.addEventListener('dragover', (e) => e.preventDefault());
+
     function runExtraction() {
         const text = document.getElementById('inputData').value;
         const output = document.getElementById('outputData');
@@ -85,10 +114,15 @@
             finalOutput += "--- EMAILS ---\n" + [...new Set(matches)].join('\n') + "\n\n";
         }
         
-        // This Regex looks for an email followed by a colon and then any characters until a space
         if(document.getElementById('extCombos').checked) {
             const matches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[^\s]+/g) || [];
             finalOutput += "--- EMAIL:PASS ---\n" + [...new Set(matches)].join('\n') + "\n\n";
+        }
+
+        if(document.getElementById('extUserPass').checked) {
+            const matches = text.match(/[a-zA-Z0-9_-]+:[^\s]+/g) || [];
+            const filtered = matches.filter(m => !m.includes('@'));
+            finalOutput += "--- USER:PASS ---\n" + [...new Set(filtered)].join('\n') + "\n\n";
         }
 
         if(document.getElementById('extUrls').checked) {
@@ -101,13 +135,11 @@
             finalOutput += "--- IPS ---\n" + [...new Set(matches)].join('\n') + "\n\n";
         }
         
-        output.value = finalOutput || "No matches found for selected criteria.";
+        output.value = finalOutput.trim() || "No matches found.";
     }
 
     function clearAll() { document.getElementById('inputData').value = ""; document.getElementById('outputData').value = ""; }
-    
     function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('outputData').value); alert("Copied!"); }
-    
     function downloadTXT() {
         const text = document.getElementById('outputData').value;
         const blob = new Blob([text], {type: 'text/plain'});
